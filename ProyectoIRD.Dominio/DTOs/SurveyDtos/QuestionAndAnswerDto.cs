@@ -15,6 +15,8 @@ namespace ProyectoIRD.Dominio.DTOs.SurveyDtos
         public DateTime CreatedAt { get; set; } 
         public DateTime UpdatedAt { get; set; }
         public int Order { get; set; }
+        public string Item { get; set; }
+        public bool IsToUpdate { get; set; }
         public ICollection<AnswerDto> Answers { get; set; }
     }
 }

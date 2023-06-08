@@ -10,8 +10,8 @@ namespace ProyectoIRD.Dominio.Interfaces.ISurveys
     public interface IUnitOfWorkSurvey : IDisposable
     {
         ISurveyRepository SurveyRepository { get; }
-        IBaseRepository<Question> QuestionRepository { get; }
-        IBaseRepository<Answer> AnswerRepository { get; }
+        IQuestionRepository QuestionRepository { get; }
+        IAnswerRepository AnswerRepository { get; }
         IQuestionSectionRepository QSectionRepository { get; }
         IResultRepository ResultRepository { get; }
         IPatientRepository PatientRepository { get; }

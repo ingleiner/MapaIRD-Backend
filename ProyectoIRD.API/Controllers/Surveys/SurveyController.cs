@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using ProyectoIRD.API.Responses;
 using ProyectoIRD.Aplicaciones.Interfaces.ISurveys;
 using ProyectoIRD.Aplicaciones.Interfaces.IUsers;
+using ProyectoIRD.Aplicaciones.QueryFilters;
+using ProyectoIRD.Dominio.CustomsEntities;
 using ProyectoIRD.Dominio.DTOs.SurveyDtos;
 using ProyectoIRD.Dominio.Entities.Surveys;
 using ProyectoIRD.Dominio.Entities.Users;
@@ -17,6 +20,7 @@ namespace ProyectoIRD.API.Controllers.Surveys
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    //TODO: Configurar permisos de acceso por roles
     public class SurveyController : ControllerBase
     {
         private readonly ISurveyService _surveyService;
@@ -34,7 +38,7 @@ namespace ProyectoIRD.API.Controllers.Surveys
             _aplicationService = aplicationService;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = nameof(GetSurveyById))]
         public async Task<IActionResult> GetSurveyById(string id, [FromQuery] DateTime searchDate)
         {
             var survey = await _surveyService.GetSurvey(Guid.Parse(id));
@@ -47,76 +51,58 @@ namespace ProyectoIRD.API.Controllers.Surveys
             return Ok(response);
         }
 
-        [HttpGet]
-        public IActionResult GetSurveys()
+        [HttpGet(Name = nameof(GetSurveys))]
+        public IActionResult GetSurveys([FromQuery] SurveyQueryFilter filter)
         {
-            var surveys = _surveyService.GetSurveys();
+            var surveys = _surveyService.GetSurveys(filter);
             var surveysDto = _mapper.Map<ICollection<SurveyDto>>(surveys);
-            var response = new IRDResponse<ICollection<SurveyDto>>(surveysDto);
+
+            var metaData = new MetaData
+            {
+              TotalCount = surveys.TotalCount,
+              PageSize =  surveys.PageSize,
+              CurrentPage =  surveys.CurrentPage,
+              TotalPages = surveys.TotalPages,
+              HasNextPage =  surveys.HasNextPage,
+              HasPreviousPage = surveys.HasPreviousPage,
+            };
+            //Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(metaData));
+
+            var response = new IRDResponse<ICollection<SurveyDto>>(surveysDto)
+            {
+                Meta = metaData,
+            };
             return Ok(response);
         }
 
-        [HttpPost]
+        [HttpPost(Name = nameof(PostSurvey))]
         public async Task<IActionResult> PostSurvey([FromBody] SurveyDto surveyDto)
         {
-            try
-            {
                 var survey = _mapper.Map<Survey>(surveyDto);
                 
                 var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == JwtRegisteredClaimNames.Email).FirstOrDefault();
-                var email = emailClaim!.Value;
-                User userDb = await _userService.getUserByEmail(email);
-                survey.UserId = userDb.Id;
-                survey.IsActive = true;
-                survey.CreatedAt = Utils.DateNow();
-                survey.UpdatedAt = Utils.DateNow();
-                await _surveyService.AddSurvey(survey);
+                var userEmail = emailClaim!.Value;
+                await _surveyService.AddSurvey(survey, userEmail);
 
                 return Ok(new { message = " Se agregó la encuesta correctamente" });
-            }
-            catch (Exception ex)
-            {
-
-                return BadRequest(ex.Message);
-            }
         }
-        [HttpPost("fullsurvey")]
+
+        [HttpPost("fullsurvey", Name = nameof(PostFullSurvey))]
         public async Task<IActionResult> PostFullSurvey(FullSurveyDto fullSurveyDto)
         {
-            try
-            {
-                Survey fullSurvey = _mapper.Map<Survey>(fullSurveyDto);
-                var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == JwtRegisteredClaimNames.Email).FirstOrDefault();
-                var email = emailClaim!.Value;
-                User userDb = await _userService.getUserByEmail(email);
-                fullSurvey.UserId = userDb.Id;
-                fullSurvey.IsActive = true;
-                fullSurvey.CreatedAt = Utils.DateNow();
-                fullSurvey.UpdatedAt = Utils.DateNow();
-                MapAuditData(fullSurvey.QuestionSections, userDb.Id);
-                await _surveyService.AddSurvey(fullSurvey);
-                return Ok(new { message = " Se agregó la encuesta  correctamente" });
-            }
-            catch (Exception ex)
-            {
-
-                return BadRequest(ex.Message);
-            }
-           
+            Survey fullSurvey = _mapper.Map<Survey>(fullSurveyDto);
+            var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == JwtRegisteredClaimNames.Email).FirstOrDefault();
+            var userEmail = emailClaim!.Value;
+                
+            await _surveyService.AddSurvey(fullSurvey, userEmail);
+            return Ok(new { message = " Se agregó la encuesta  correctamente" });
         }
 
 
-        /// <summary>
-        /// Obtener una Encuesta con sus secciones, preguntas y posibles respuestas
-        /// de acuerdo al id
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-
-        [HttpGet("fullsurvey/{id}")]
-        public async Task<IActionResult> GetFullSurvey(Guid id)
+        [HttpGet("fullsurvey/{surveyId}", Name = nameof(GetFullSurvey))]
+        public async Task<IActionResult> GetFullSurvey(string surveyId)
         {
-            var survey = await _surveyService.GetFullSurvey(id);
+            var survey = await _surveyService.GetFullSurvey(Guid.Parse(surveyId));
             foreach(var secion in survey.QuestionSections)
             {
                 foreach(var question in secion.Questions)
@@ -128,37 +114,35 @@ namespace ProyectoIRD.API.Controllers.Surveys
             return Ok(surveyDto);
         }
 
-        /// <summary>
-        /// Procedimiento para asignar los datos de auditoria a las entidades Hijas de Encuesta
-        /// </summary>
-        /// <param name="questionSection"></param>
-        /// <param name="userId"></param>
-        private void MapAuditData(ICollection<QuestionSection> questionSection, string userId)
+        [HttpPut("updatefullsurvey", Name = nameof(UpdateFullSurvey))]
+        public async Task<IActionResult> UpdateFullSurvey(FullSurveyDto fullSurveyDto)
         {
-            var orderSection = 0;
-            foreach(var section in questionSection)
+            Survey fullSurvey = _mapper.Map<Survey>(fullSurveyDto);
+            var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == JwtRegisteredClaimNames.Email).FirstOrDefault();
+            var userEmail = emailClaim!.Value;            
+            await _surveyService.UpdateFullSurvey(fullSurvey, userEmail);
+            return Ok(new { message = "Se ha actualizado la Encuesta correctamente" });
+        }
+
+        [HttpPut("updatesurvey")]
+        public async Task<IActionResult> UpdateSurvey(SurveyDto surveyDto)
+        {
+            Survey survey = _mapper.Map<Survey>(surveyDto);
+            var emailClaim = HttpContext.User.Claims.Where(claim => claim.Type == JwtRegisteredClaimNames.Email).FirstOrDefault();
+            var userEmail = emailClaim!.Value;
+            survey = await _surveyService.UpdateSurvey(survey, userEmail);
+
+            var message = new
             {
-                section.CreatedAt = Utils.DateNow();
-                section.UpdatedAt = Utils.DateNow();
-                section.UserId =userId;
-                section.Order = orderSection + 1;
-                var orderQuestion = 0;
-                foreach(var question in section.Questions)
-                {
-                    question.UserId = userId;
-                    question.CreatedAt = Utils.DateNow();
-                    question.UpdatedAt = Utils.DateNow();
-                    question.Order = orderQuestion + 1;
-                    var orderAnswer = 0;
-                    foreach (var answer in question.Answers)
-                    {
-                        answer.UserId = userId;
-                        answer.CreatedAt = Utils.DateNow();
-                        answer.UpdatedAt = Utils.DateNow();
-                        answer.Order = orderAnswer + 1;
-                    }
-                }
-            }
+                message = "Se ha actualizado la Encuesta correctamente"
+            };
+            surveyDto = _mapper.Map<SurveyDto>(survey);
+            var response = new IRDResponse<SurveyDto>(surveyDto)
+            {
+                Message = message
+            };
+
+            return Ok(response);
         }
     }
 }

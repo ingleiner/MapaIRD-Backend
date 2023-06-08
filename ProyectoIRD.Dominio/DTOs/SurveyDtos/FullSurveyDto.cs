@@ -18,6 +18,7 @@ namespace ProyectoIRD.Dominio.DTOs.SurveyDtos
         public DateTime Validity { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public bool IsActive { get; set; }
         public ICollection<SectionAndQuestionDto> QuestionSections { get; set; }
 
     }

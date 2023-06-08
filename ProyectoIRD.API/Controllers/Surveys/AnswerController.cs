@@ -3,15 +3,18 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Client;
 using ProyectoIRD.API.Responses;
 using ProyectoIRD.Aplicaciones.Interfaces.ISurveys;
 using ProyectoIRD.Aplicaciones.Interfaces.IUsers;
 using ProyectoIRD.Aplicaciones.Services;
+using ProyectoIRD.Aplicaciones.Services.Surveys;
 using ProyectoIRD.Dominio.DTOs.SurveyDtos;
 using ProyectoIRD.Dominio.Entities.Surveys;
 using ProyectoIRD.Dominio.Entities.Users;
 using ProyectoIRD.Dominio.Utils;
 using System.IdentityModel.Tokens.Jwt;
+using static System.Collections.Specialized.BitVector32;
 
 namespace ProyectoIRD.API.Controllers.Surveys
 {
@@ -65,6 +68,19 @@ namespace ProyectoIRD.API.Controllers.Surveys
 
                 return BadRequest(ex.Message);
             }
+
+            
+        }
+
+        [HttpDelete("{answerId}")]
+        public async Task<IActionResult> DeleteAnswer(string answerId)
+        {
+            await _answerService.DeleteAnswer(Guid.Parse(answerId));
+            var message = new
+            {
+                message = "Se ha eliminado la opción de respuesta correctamente"
+            };
+            return Ok(message);
         }
     }
 }

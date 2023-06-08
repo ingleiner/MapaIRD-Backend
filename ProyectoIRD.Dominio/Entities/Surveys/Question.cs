@@ -1,4 +1,5 @@
 ﻿using ProyectoIRD.Dominio.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProyectoIRD.Dominio.Entities.Surveys
 {
@@ -11,7 +12,10 @@ namespace ProyectoIRD.Dominio.Entities.Surveys
         public int Order { get; set; }
         public QuestionSection QuestionSection { get; set; }
         public ICollection<Answer> Answers { get; set; }
-        public ICollection<Result> Results { get; set; }    
+        public ICollection<Result> Results { get; set; }
+
+        [NotMapped]
+        public bool IsToUpdate { get; set; }
 
     }
 }

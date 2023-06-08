@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProyectoIRD.Aplicaciones.Exceptions;
 using ProyectoIRD.Dominio.Entities;
 using ProyectoIRD.Dominio.Interfaces;
 using ProyectoIRD.Infraestructura.Datos.Data;
@@ -43,5 +44,6 @@ namespace ProyectoIRD.Infraestructura.Datos.Repositories
             T entity = await GetById(id);
             _entities.Remove(entity);
         }
+
     }
 }

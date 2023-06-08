@@ -42,6 +42,7 @@ namespace ProyectoIRD.Aplicaciones.Services.Surveys
         public async Task<bool> DeleteAnswer(Guid id)
         {
             await _unitOfWorkSurvey.AnswerRepository.Delete(id);
+            await _unitOfWorkSurvey.SaveChangesAsync();
             return true;
         }
     }

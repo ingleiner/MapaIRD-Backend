@@ -75,5 +75,16 @@ namespace ProyectoIRD.API.Controllers.Surveys
             var response = new IRDResponse<ResultsByQuestion>(resultsByQuestion);
             return Ok(response);
         }
+        [HttpDelete("{sectionId}")]
+        public async Task<IActionResult> DeleteSection(string sectionId)
+        {
+            await _qSectionService.DeleteQSection(Guid.Parse(sectionId));
+            var message = new
+            {
+                message = "Se ha eliminado la seccion correctamente"
+            };
+            return Ok(message);
+           
+        }
     }
 }

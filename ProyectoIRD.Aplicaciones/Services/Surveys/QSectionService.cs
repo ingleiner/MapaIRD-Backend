@@ -1,4 +1,5 @@
-﻿using ProyectoIRD.Aplicaciones.Interfaces.ISurveys;
+﻿using ProyectoIRD.Aplicaciones.Exceptions;
+using ProyectoIRD.Aplicaciones.Interfaces.ISurveys;
 using ProyectoIRD.Dominio.Entities.Surveys;
 using ProyectoIRD.Dominio.Interfaces.ISurveys;
 
@@ -37,8 +38,22 @@ namespace ProyectoIRD.Aplicaciones.Services.Surveys
         }
         public async Task<bool> DeleteQSection(Guid id)
         {
-            await _unitOfWorkSurvey.QSectionRepository.Delete(id);
-            return true;
+            try
+            {
+                await _unitOfWorkSurvey.QSectionRepository.Delete(id);
+                await _unitOfWorkSurvey.SaveChangesAsync();
+                return true;
+            }
+            catch (BussinesException ex)
+            {
+
+                throw new BussinesException(ex.Message);
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+            
         }
 
         public async Task<List<object>> GetGralResultsBySection(Guid surveyId, DateTime searchDate)

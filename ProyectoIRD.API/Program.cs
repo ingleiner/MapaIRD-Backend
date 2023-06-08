@@ -10,6 +10,7 @@ using ProyectoIRD.Aplicaciones.Services;
 using ProyectoIRD.Aplicaciones.Services.Surveys;
 using ProyectoIRD.Aplicaciones.Services.Users;
 using ProyectoIRD.Aplicaciones.Validators;
+using ProyectoIRD.Dominio.CustomsEntities;
 using ProyectoIRD.Dominio.Entities.Users;
 using ProyectoIRD.Dominio.Interfaces;
 using ProyectoIRD.Dominio.Interfaces.ISurveys;
@@ -32,10 +33,15 @@ builder.Services.AddResponseCaching();
 builder.Services.AddDbContext<MapaIRDContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MapaIRDconnection")));
 
-builder.Services.AddControllers().AddNewtonsoftJson(options =>
+builder.Services.AddControllers(options =>
+{
+    //Manejo de excepciones personalizadas
+    options.Filters.Add<GlobalExceptionFilter>();
+}).AddNewtonsoftJson(options =>
 {
     // Ignorar referencias circulares entre entidades
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+    options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
 });
 
 // Repositorios
@@ -125,6 +131,9 @@ builder.Services.AddAuthorization(options =>
 });
 //Limpiar mapeo automático de algunos tipos de Claims de JWT
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+//Configuracion Paginación por defecto en el Appsettings.json
+builder.Services.Configure<PaginationOptions>(builder.Configuration.GetSection("Pagination"));
 
 var app = builder.Build();
 

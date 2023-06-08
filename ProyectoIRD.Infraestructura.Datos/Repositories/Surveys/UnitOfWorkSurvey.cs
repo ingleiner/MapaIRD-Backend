@@ -9,8 +9,8 @@ namespace ProyectoIRD.Infraestructura.Datos.Repositories.Surveys
     {
         private readonly MapaIRDContext _context;
         private readonly ISurveyRepository _surveyRepository;
-        private readonly IBaseRepository<Question> _questionRepository;
-        private readonly IBaseRepository<Answer> _answerRepository;
+        private readonly IQuestionRepository _questionRepository;
+        private readonly IAnswerRepository _answerRepository;
         private readonly IQuestionSectionRepository _qSectionRepository;
         private readonly ResultRepository _resultRepository;
         private readonly IPatientRepository _patientRepository;
@@ -25,11 +25,11 @@ namespace ProyectoIRD.Infraestructura.Datos.Repositories.Surveys
         public IPatientRepository PatientRepository => _patientRepository ??
            new PatientRepository(_context);
 
-        public IBaseRepository<Question> QuestionRepository => _questionRepository ??
-                new BaseRepository<Question>(_context);
+        public IQuestionRepository QuestionRepository => _questionRepository ??
+                new QuestionRepository(_context);
 
-        public IBaseRepository<Answer> AnswerRepository => _answerRepository ??
-                new BaseRepository<Answer>(_context);
+        public IAnswerRepository AnswerRepository => _answerRepository ??
+                new AnswerRepository(_context);
         public IQuestionSectionRepository QSectionRepository => _qSectionRepository ??
                 new QuestionSectionRepository(_context);
 

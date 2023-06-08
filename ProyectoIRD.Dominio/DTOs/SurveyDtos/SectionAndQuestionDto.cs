@@ -9,8 +9,9 @@
         public Guid Id { get; set; }
         public string Description { get; set; }
         public int Order { get; set; }
-        public DateTime CreatedAt { get; set; } = Utils.Utils.DateNow();
-        public DateTime UpdatedAt { get; set; } = Utils.Utils.DateNow();
+        public DateTime CreatedAt { get; set; } 
+        public DateTime UpdatedAt { get; set; }
+        public bool IsToUpdate { get; set; }
         public ICollection<QuestionAndAnswerDto> Questions { get; set; }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProyectoIRD.API.Responses;
 using ProyectoIRD.Aplicaciones.Interfaces.ISurveys;
 using ProyectoIRD.Aplicaciones.Interfaces.IUsers;
+using ProyectoIRD.Aplicaciones.Services.Surveys;
 using ProyectoIRD.Dominio.DTOs.SurveyDtos;
 using ProyectoIRD.Dominio.Entities.Surveys;
 using ProyectoIRD.Dominio.Entities.Users;
@@ -75,12 +76,21 @@ namespace ProyectoIRD.API.Controllers.Surveys
         }
         [HttpGet]
          public IActionResult GetQuestions()
-        {
+         {
             var questions = _questionService.GetQuestions();
             var questionDto = _mapper.Map<QuestionDto>(questions);
             var response = new IRDResponse<QuestionDto>(questionDto);
             return Ok(response);
+         }
+        [HttpDelete("{questionId}")]
+        public async Task<IActionResult> DeleteQuestion(string questionId)
+        {
+            await _questionService.DeleteQuestion(Guid.Parse(questionId));
+            var message = new
+            {
+                message = "Se ha eliminado la pregunta correctamente"
+            };
+            return Ok(message);
         }
-        
     }
 }
